@@ -236,8 +236,8 @@ void DDSScheduler::addAgents(const DDSSubmitInfo& submit, const Resources& resou
     for (size_t i = 1; i <= submit.m_nInstances; ++i) {
         TaskInfo taskInfo;
 
-        taskInfo.set_name(string("DDS Framework Task #") + to_string(i));
-        taskInfo.mutable_task_id()->set_value(to_string(i));
+        taskInfo.set_name("DDS Framework Task");
+        taskInfo.mutable_task_id()->set_value(string("dds-") + submit.m_id + "-r-" + to_string(submit.m_restId) + "-t-" + to_string(i));
         taskInfo.mutable_resources()->MergeFrom(resourcesPerAgent);
         if (!containerImageName.empty()) {
             taskInfo.mutable_container()->MergeFrom(container);
