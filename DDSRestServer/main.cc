@@ -1,4 +1,4 @@
-//
+// 
 // Created by kevin on 6/23/16.
 //
 
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 
         // Setup Mesos
         unique_ptr<DDSScheduler> ddsScheduler (new DDSScheduler());
-        unique_ptr<MesosSchedulerDriver> mesosSchedulerDriver (new MesosSchedulerDriver(ddsScheduler.get(), frameworkInfo, master));
+        unique_ptr<MesosSchedulerDriver> mesosSchedulerDriver (new MesosSchedulerDriver(ddsScheduler.get(), frameworkInfo, ::master));
 
         // Start Mesos without blocking this thread
         Status status = mesosSchedulerDriver->start();

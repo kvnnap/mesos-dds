@@ -25,3 +25,4 @@ string DDSConfInfoResponse::Id = "Id";
 // Status
 string Status::Status = "Status";
 string Status::NumSubmissions = "NumSubmissions";
+string Status::PendingTasks = "PendingTasks";

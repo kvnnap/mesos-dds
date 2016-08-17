@@ -138,6 +138,9 @@ public:
     void setFutureTaskContainerImage(const std::string& imageName);
     void setFutureWorkDirName(const std::string& workDirName);
 
+    // Getters
+    size_t getPendingAgents(const DDSSubmitInfo& submit);
+
 private:
 
     // Mutex to protect method calls

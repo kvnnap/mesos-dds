@@ -247,3 +247,15 @@ void DDSScheduler::addAgents(const DDSSubmitInfo& submit, const Resources& resou
         waitingTasks.push_back(taskInfo);
     }
 }
+
+size_t DDSScheduler::getPendingAgents(const DDSSubmitInfo& submit) {
+    lock_guard<std::mutex> lock(ddsMutex);
+    size_t count = 0;
+    string prefix = string("dds-") + submit.m_id + "-r-" + to_string(submit.m_restId) + "-t-";
+    for (const TaskInfo& taskInfo : waitingTasks) {
+        if (std::equal(prefix.begin(), prefix.end(), taskInfo.task_id().value().begin())) {
+            ++count;
+        }
+    }
+    return count;
+}

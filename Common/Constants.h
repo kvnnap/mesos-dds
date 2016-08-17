@@ -31,6 +31,7 @@ namespace DDSMesos {
             namespace Status {
                 extern std::string Status;
                 extern std::string NumSubmissions;
+                extern std::string PendingTasks;
             }
 
         };

@@ -44,7 +44,17 @@ void Server::run() {
     // Status Listener
     statusListener.support(methods::GET, [this](http_request request) -> void {
         using namespace DDSMesos::Common::Constants::Status;
+
+        auto vars = uri::split_query(request.request_uri().query());
+        auto id = vars.find("id");
+        size_t requestedId = 0;
         json::value status;
+        if (id != end(vars)) {
+            requestedId = atoi(id->second.c_str());
+            lock_guard<recursive_mutex> lock(mtx);
+            status[Status][PendingTasks] = json::value::number(ddsScheduler.getPendingAgents(submissions.at(requestedId)));
+        }
+
         status[Status][NumSubmissions] = json::value::number(submissions.size());
         request.reply(status_codes::OK, status);
     });

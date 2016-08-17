@@ -4,6 +4,7 @@
 #include <thread>
 #include <fstream>
 #include <stdexcept>
+#include <chrono>
 
 #include <string>
 #include <sstream>
@@ -117,7 +118,7 @@ int main(int argc, char **argv) {
                 using namespace web::http;
                 using namespace web::http::client;
 
-                http_client client (string("http://") + restHost + "/dds-submit" );
+                http_client client (string("http://") + restHost + "/" );
 
                 json::value ddsConfInf;
 
@@ -142,22 +143,59 @@ int main(int argc, char **argv) {
                 }
 
                 // Make request
-                client.request(methods::POST, "", ddsConfInf).then([&error](http_response response) -> void {
+                std::atomic<uint64_t> submissionId ( 0 );
+                client.request(methods::POST, uri_builder("/dds-submit").to_string(), ddsConfInf).then([&error, &submissionId](http_response response) -> void {
                     if (response.status_code() == status_codes::OK) {
-                        response.extract_json().then([&error](pplx::task<json::value> responseValue) -> void {
+                        response.extract_json().then([&error, &submissionId](pplx::task<json::value> responseValue) -> void {
                             try {
                                 using namespace DDSMesos::Common::Constants::DDSConfInfoResponse;
-                                BOOST_LOG_TRIVIAL(trace) << "OK. REST Server Submison Id: " << responseValue.get().at(Id) << endl;
+                                submissionId = responseValue.get().at(Id).as_number().to_uint64();
+                                BOOST_LOG_TRIVIAL(trace) << "OK. REST Server Submison Id: " << submissionId << endl;
                             } catch (const exception& ex) {
-                                BOOST_LOG_TRIVIAL(trace) << "Malformed response from Server" << endl;
+                                BOOST_LOG_TRIVIAL(error) << "Malformed response from Server" << endl;
                                 error = true;
                             }
-                        });
+                        }).wait();
                     } else {
-                        BOOST_LOG_TRIVIAL(trace) << "Request Failed - Did not submit" << endl;
+                        BOOST_LOG_TRIVIAL(error) << "Request Failed - Did not submit" << endl;
                         error = true;
                     }
                 }).wait();
+
+                //
+                bool ready = false;
+                uri_builder builder ("/status");
+                builder.append_query("id", to_string(submissionId));
+                chrono::system_clock::time_point t1 = chrono::system_clock::now();
+                while (!error && !ready) {
+                    client.request(methods::GET, builder.to_string()).then([&error, &ready](http_response response) -> void {
+                        if (response.status_code() == status_codes::OK) {
+                            response.extract_json().then([&error, &ready](pplx::task<json::value> responseValue) -> void {
+                                try {
+                                    using namespace DDSMesos::Common::Constants::Status;
+                                    uint64_t pendingAgents = responseValue.get().at(Status).as_object().at(PendingTasks).as_number().to_uint64();
+                                    ready = pendingAgents == 0;
+                                    BOOST_LOG_TRIVIAL(trace) << "Pending Agents: " << pendingAgents << endl;
+                                } catch (const exception& ex) {
+                                    BOOST_LOG_TRIVIAL(error) << "Malformed Status response from Server" << endl;
+                                    error = true;
+                                }
+                            }).wait();
+                        } else {
+                            BOOST_LOG_TRIVIAL(error) << "Status of Request Failed" << endl;
+                            error = true;
+                        }
+                    }).wait();
+                    if (!ready) {
+                        this_thread::sleep_for(chrono::milliseconds(500));
+                    }
+                }
+                chrono::system_clock::time_point t2 = chrono::system_clock::now();
+                chrono::duration<float> fSec = t2 - t1;
+                if (ready) {
+                    BOOST_LOG_TRIVIAL(trace) << "Ready! Took: " << fSec.count() << " seconds" << endl;
+                }
+
             }
 
             // Check for any kind of errors
