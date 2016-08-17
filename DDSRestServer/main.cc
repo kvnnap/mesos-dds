@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
         // Describe my mesos framework
         FrameworkInfo frameworkInfo;
         frameworkInfo.set_user("root");
-        frameworkInfo.set_name("Mesos DDS Framework");
+        frameworkInfo.set_name("DDS Framework");
         frameworkInfo.set_principal("ddsframework");
 
         // Setup Mesos
@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
         unique_ptr<MesosSchedulerDriver> mesosSchedulerDriver (new MesosSchedulerDriver(ddsScheduler.get(), frameworkInfo, ::master));
 
         // Start Mesos without blocking this thread
-        Status status = mesosSchedulerDriver->start();
+        /*Status status = */mesosSchedulerDriver->start();
 
         // Start REST service
         DDSMesos::Server srv (*ddsScheduler, restHost);

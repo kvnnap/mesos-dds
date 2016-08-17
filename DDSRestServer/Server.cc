@@ -49,9 +49,11 @@ void Server::run() {
         auto id = vars.find("id");
         size_t requestedId = 0;
         json::value status;
+
+        lock_guard<recursive_mutex> lock(mtx);
+
         if (id != end(vars)) {
-            requestedId = atoi(id->second.c_str());
-            lock_guard<recursive_mutex> lock(mtx);
+            requestedId = static_cast<size_t>(atoi(id->second.c_str()));
             status[Status][PendingTasks] = json::value::number(ddsScheduler.getPendingAgents(submissions.at(requestedId)));
         }
 
